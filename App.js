@@ -1,45 +1,95 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, StatusBar, SafeAreaView } from 'react-native';
+import React, { useState, useCallback, memo } from 'react';
+import { StyleSheet, Text, View, Pressable, StatusBar, SafeAreaView, Alert, Platform } from 'react-native';
+
+// Theme / constants
+const COLORS = {
+  background: '#0f172a', // Deep Midnight Blue
+  surface: '#1e293b',
+  accent: '#38bdf8', // Sky Blue
+  muted: '#94a3b8',
+  danger: '#ef4444',
+  footer: '#475569',
+  textOnAccent: '#0f172a',
+  white: '#ffffff',
+};
+
+// Small presentational components kept in the same file for simplicity
+const Header = memo(function Header() {
+  return (
+    <View style={styles.header} accessibilityRole="header">
+      <Text style={styles.headerTitle} allowFontScaling>
+        PRO TEACHER APP
+      </Text>
+    </View>
+  );
+});
+
+const CounterCircle = memo(function CounterCircle({ count }) {
+  return (
+    <View style={styles.counterCircle} accessible accessibilityRole="image" accessibilityLabel={`Students count: ${count}`}>
+      <Text style={styles.counterText} allowFontScaling accessibilityLiveRegion="polite">{count}</Text>
+    </View>
+  );
+});
+
+const Footer = memo(function Footer() {
+  return (
+    <View style={styles.footer} accessibilityRole="contentinfo">
+      <Text style={styles.footerText} allowFontScaling>Powered by MyTeacherApp</Text>
+    </View>
+  );
+});
 
 export default function App() {
-  // 1. State - This is the "Brain" of the app
+  // State
   const [count, setCount] = useState(0);
 
-  // 2. Logic - Functions to change the count
-  const increment = () => setCount(count + 1);
-  const reset = () => setCount(0);
+  // Handlers (use callbacks and functional updates)
+  const increment = useCallback(() => setCount(c => c + 1), []);
+
+  const confirmReset = useCallback(() => {
+    Alert.alert(
+      'Reset counter',
+      'Are you sure you want to reset the student counter?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Reset', style: 'destructive', onPress: () => setCount(0) },
+      ],
+      { cancelable: true }
+    );
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-      
-      {/* Header Section */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>PRO TEACHER APP</Text>
-      </View>
 
-      {/* Main Content */}
+      <Header />
+
       <View style={styles.content}>
-        <Text style={styles.label}>Total Students Logged:</Text>
-        
-        <View style={styles.counterCircle}>
-          <Text style={styles.counterText}>{count}</Text>
-        </View>
+        <Text style={styles.label} allowFontScaling>Total Students Logged:</Text>
 
-        {/* Interactive Buttons */}
-        <TouchableOpacity style={styles.buttonMain} onPress={increment}>
-          <Text style={styles.buttonText}>+ ADD STUDENT</Text>
-        </TouchableOpacity>
+        <CounterCircle count={count} />
 
-        <TouchableOpacity style={styles.buttonReset} onPress={reset}>
-          <Text style={styles.resetText}>RESET COUNTER</Text>
-        </TouchableOpacity>
+        <Pressable
+          onPress={increment}
+          style={({ pressed }) => [styles.buttonMain, pressed && styles.buttonPressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Add student"
+        >
+          <Text style={styles.buttonText} allowFontScaling>+ ADD STUDENT</Text>
+        </Pressable>
+
+        <Pressable
+          onPress={confirmReset}
+          style={({ pressed }) => [styles.buttonReset, pressed && styles.buttonPressedReset]}
+          accessibilityRole="button"
+          accessibilityLabel="Reset counter"
+        >
+          <Text style={styles.resetText} allowFontScaling>RESET COUNTER</Text>
+        </Pressable>
       </View>
 
-      {/* Footer Section */}
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>Powered by Termux & Windows 7</Text>
-      </View>
+      <Footer />
     </SafeAreaView>
   );
 }
@@ -47,18 +97,18 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f172a', // Deep Midnight Blue
+    backgroundColor: COLORS.background,
   },
   header: {
     paddingTop: 20,
     paddingBottom: 20,
-    backgroundColor: '#1e293b',
+    backgroundColor: COLORS.surface,
     alignItems: 'center',
     borderBottomWidth: 1,
     borderBottomColor: '#334155',
   },
   headerTitle: {
-    color: '#38bdf8', // Sky Blue
+    color: COLORS.accent,
     fontSize: 20,
     fontWeight: '900',
     letterSpacing: 2,
@@ -70,7 +120,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   label: {
-    color: '#94a3b8',
+    color: COLORS.muted,
     fontSize: 18,
     marginBottom: 20,
   },
@@ -79,28 +129,42 @@ const styles = StyleSheet.create({
     height: 180,
     borderRadius: 90,
     borderWidth: 4,
-    borderColor: '#38bdf8',
+    borderColor: COLORS.accent,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#1e293b',
+    backgroundColor: COLORS.surface,
     marginBottom: 40,
-    elevation: 10, // Shadow for Android
+    // Platform specific shadow/elevation
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.25,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 10,
+      },
+    }),
   },
   counterText: {
-    color: '#fff',
+    color: COLORS.white,
     fontSize: 72,
     fontWeight: 'bold',
   },
   buttonMain: {
-    backgroundColor: '#38bdf8',
+    backgroundColor: COLORS.accent,
     paddingHorizontal: 40,
     paddingVertical: 15,
     borderRadius: 12,
-    width: '80%',
+    minWidth: 220,
     alignItems: 'center',
   },
+  buttonPressed: {
+    opacity: 0.85,
+  },
   buttonText: {
-    color: '#0f172a',
+    color: COLORS.textOnAccent,
     fontSize: 18,
     fontWeight: 'bold',
   },
@@ -108,8 +172,11 @@ const styles = StyleSheet.create({
     marginTop: 20,
     padding: 10,
   },
+  buttonPressedReset: {
+    opacity: 0.7,
+  },
   resetText: {
-    color: '#ef4444', // Red
+    color: COLORS.danger,
     fontSize: 14,
     fontWeight: '600',
     textDecorationLine: 'underline',
@@ -119,7 +186,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   footerText: {
-    color: '#475569',
+    color: COLORS.footer,
     fontSize: 12,
   },
 });
